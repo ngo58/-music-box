@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090909">
+<link rel="manifest" href="manifest.webmanifest">
+<title>MUSIC BOX</title>
+<style>
+:root{--bg:#090909;--panel:#151515;--gold:#d6b879;--muted:#929292;--line:#292929}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(ellipse at 50% -15%,#302719 0%,#111 42%,var(--bg) 75%);color:#f7f3ea;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;padding:env(safe-area-inset-top) 18px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 2px 26px}
+.brand{letter-spacing:.25em;font-size:13px;color:var(--gold);font-weight:700}.sub{font-size:10px;color:#777;letter-spacing:.18em;margin-top:5px}
+.badge{border:1px solid #594a2c;color:var(--gold);border-radius:30px;padding:7px 10px;font-size:10px;letter-spacing:.1em}
+h1{font-size:28px;font-weight:500;margin:4px 0 6px} .hint{color:var(--muted);font-size:13px;line-height:1.5}
+.cover{margin:24px auto 20px;width:min(78vw,310px);aspect-ratio:1;border-radius:24px;background:linear-gradient(145deg,#2a2419,#101010 55%,#49391e);border:1px solid #594a2c;box-shadow:0 22px 55px #000b;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.cover:before,.cover:after{content:"";position:absolute;border:1px solid #d6b87955;border-radius:50%;width:72%;aspect-ratio:1}.cover:after{width:52%}
+.disc{font-size:52px;color:var(--gold);z-index:1}.track{text-align:center}.track strong{display:block;font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track span{display:block;color:var(--muted);font-size:13px;margin-top:7px}
+.progress{margin:22px 0 8px;width:100%;accent-color:var(--gold)}.times{display:flex;justify-content:space-between;color:#888;font-size:11px}
+.controls{display:flex;align-items:center;justify-content:center;gap:28px;margin:22px 0 26px}.controls button{border:0;background:none;color:#eee;font-size:25px}.controls .play{width:62px;height:62px;border-radius:50%;background:var(--gold);color:#111;font-size:24px;box-shadow:0 5px 25px #d6b87944}
+.row{display:flex;gap:10px;margin:16px 0}.action{flex:1;border:1px solid var(--line);border-radius:14px;padding:13px 10px;background:#141414;color:#eee;font-size:13px}.action b{color:var(--gold);font-weight:600}
+.section{margin-top:25px}.sectionhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.sectionhead h2{font-size:16px;font-weight:600;margin:0}.count{font-size:12px;color:var(--muted)}
+#songs{display:flex;flex-direction:column;gap:8px}.song{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #242424;background:#121212;border-radius:13px}.song .mini{width:40px;height:40px;border-radius:9px;background:#292216;color:var(--gold);display:grid;place-items:center}.song .info{flex:1;min-width:0}.song .info b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.song .info small{color:#888;font-size:11px}.song button{border:0;background:none;color:var(--gold);font-size:18px}
+input[type=file]{display:none}.empty{border:1px dashed #49402f;border-radius:14px;padding:22px;text-align:center;color:#888;font-size:13px;line-height:1.6}
+footer{text-align:center;color:#666;font-size:10px;letter-spacing:.12em;margin:28px 0 5px}
+</style>
+</head>
+<body>
+<header><div><div class="brand">MUSIC BOX</div><div class="sub">YOUR MUSIC · YOUR SPACE</div></div><div class="badge">OFFLINE PLAYER</div></header>
+<main>
+<h1>Âm nhạc của bạn.</h1><div class="hint">Một góc nghe nhạc riêng tư, không quảng cáo.</div>
+<div class="cover"><div class="disc">♫</div></div>
+<div class="track"><strong id="nowTitle">Chưa chọn bài hát</strong><span id="nowArtist">Thêm nhạc từ iPhone để bắt đầu</span></div>
+<input id="progress" class="progress" type="range" min="0" max="1000" value="0">
+<div class="times"><span id="elapsed">0:00</span><span id="duration">0:00</span></div>
+<div class="controls">
+<button id="shuffle" aria-label="Phát ngẫu nhiên">⤨</button><button id="prev" aria-label="Bài trước">⏮</button><button id="play" class="play" aria-label="Phát">▶</button><button id="next" aria-label="Bài tiếp">⏭</button><button id="repeat" aria-label="Lặp lại">↻</button>
+</div>
+<div class="row"><button class="action" id="add"><b>＋</b> Thêm nhạc</button><button class="action" id="clear">Xóa thư viện</button></div>
+<input id="files" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac" multiple>
+<section class="section"><div class="sectionhead"><h2>Thư viện nhạc</h2><span class="count" id="count">0 bài</span></div><div id="songs"><div class="empty">Thư viện đang trống.<br>Nhấn “Thêm nhạc” để chọn MP3 hoặc tệp âm thanh trong ứng dụng Tệp.</div></div></section>
+</main>
+<footer>MADE FOR YOUR MOMENTS</footer>
+<audio id="audio" preload="metadata"></audio>
+<script>
+const $=id=>document.getElementById(id), audio=$('audio'); let tracks=[], current=-1, shuffle=false, repeat=false, objectUrl=null;
+const dbReq=indexedDB.open('MusicBoxDB',1);
+dbReq.onupgradeneeded=()=>dbReq.result.createObjectStore('tracks',{keyPath:'id'});
+dbReq.onsuccess=async()=>{const db=dbReq.result;const tx=db.transaction('tracks','readonly');tracks=await new Promise(res=>{const r=tx.objectStore('tracks').getAll();r.onsuccess=()=>res(r.result||[])});render();};
+function db(){return dbReq.result}
+function saveTrack(t){return new Promise((res,rej)=>{const tx=db().transaction('tracks','readwrite');tx.objectStore('tracks').put(t);tx.oncomplete=res;tx.onerror=rej})}
+function removeAll(){return new Promise(res=>{const tx=db().transaction('tracks','readwrite');tx.objectStore('tracks').clear();tx.oncomplete=res})}
+function fmt(s){if(!isFinite(s))return'0:00';return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function render(){ $('count').textContent=tracks.length+' bài';const box=$('songs');box.innerHTML='';if(!tracks.length){box.innerHTML='<div class="empty">Thư viện đang trống.<br>Nhấn “Thêm nhạc” để chọn tệp âm thanh.</div>';return}
+tracks.forEach((t,i)=>{const el=document.createElement('div');el.className='song';el.innerHTML='<div class="mini">♫</div><div class="info"><b></b><small>Âm thanh lưu trên thiết bị</small></div><button aria-label="Phát">▶</button>';el.querySelector('b').textContent=t.name;el.querySelector('button').onclick=()=>play(i);el.onclick=e=>{if(e.target.tagName!=='BUTTON')play(i)};box.append(el)})}
+function play(i){if(!tracks.length)return;current=(i+tracks.length)%tracks.length;const t=tracks[current];if(objectUrl)URL.revokeObjectURL(objectUrl);objectUrl=URL.createObjectURL(t.blob);audio.src=objectUrl;$('nowTitle').textContent=t.name;$('nowArtist').textContent='Đã lưu trên iPhone';audio.play().then(updateButton).catch(()=>updateButton())}
+function updateButton(){$('play').textContent=audio.paused?'▶':'Ⅱ'}
+$('add').onclick=()=>$('files').click();
+$('files').onchange=async e=>{for(const f of e.target.files){const t={id:crypto.randomUUID(),name:f.name.replace(/\.[^.]+$/,''),blob:f};await saveTrack(t);tracks.push(t)}render();if(current<0&&tracks.length)play(0);e.target.value=''};
+$('play').onclick=()=>{if(current<0){if(tracks.length)play(0);return}if(audio.paused)audio.play();else audio.pause();updateButton()};
+$('next').onclick=()=>play(shuffle?Math.floor(Math.random()*tracks.length):current+1);
+$('prev').onclick=()=>{if(audio.currentTime>3)audio.currentTime=0;else play(current-1)};
+$('shuffle').onclick=()=>{shuffle=!shuffle;$('shuffle').style.color=shuffle?'#d6b879':'#eee'};
+$('repeat').onclick=()=>{repeat=!repeat;audio.loop=repeat;$('repeat').style.color=repeat?'#d6b879':'#eee'};
+$('clear').onclick=async()=>{if(!confirm('Xóa toàn bộ nhạc đã thêm khỏi MUSIC BOX?'))return;await removeAll();tracks=[];current=-1;audio.pause();audio.removeAttribute('src');$('nowTitle').textContent='Chưa chọn bài hát';$('nowArtist').textContent='Thêm nhạc từ iPhone để bắt đầu';render();updateButton()};
+audio.ontimeupdate=()=>{if(audio.duration){$('progress').value=audio.currentTime/audio.duration*1000;$('elapsed').textContent=fmt(audio.currentTime);$('duration').textContent=fmt(audio.duration)}};
+$('progress').oninput=()=>{if(audio.duration)audio.currentTime=$('progress').value/1000*audio.duration};
+audio.onended=()=>{if(!repeat)play(shuffle?Math.floor(Math.random()*tracks.length):current+1)};
+if('mediaSession'in navigator){navigator.mediaSession.setActionHandler('play',()=>audio.play());navigator.mediaSession.setActionHandler('pause',()=>audio.pause());navigator.mediaSession.setActionHandler('previoustrack',()=>$('prev').click());navigator.mediaSession.setActionHandler('nexttrack',()=>$('next').click())}
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
